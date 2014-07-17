@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+# Usage: $ set-env key value
+set-env() {
+  echo "export $1=$2" >> $PROFILE_PATH
+}
+
+mktmpdir() {
+  dir=$(mktemp -t fakesu-$1-XXXX)
+  rm -rf $dir
+  mkdir -p $dir
+  echo $dir
+}
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+VERSION="2.8.13"
+REDIS_BUILD="$(mktmpdir redis)"
+INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
+PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
+
+mkdir -p $INSTALL_DIR
+mkdir -p $(dirname $PROFILE_PATH)
+mkdir -p $CACHE_DIR
+
+if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
+	echo "Fetching and installing redis" | indent
+	cd $REDIS_BUILD
+	curl -OL "http://download.redis.io/releases/redis-$VERSION.tar.gz"
+	tar zxvf "redis-$VERSION.tar.gz"
+	cd "redis-$VERSION"
+	make
+	make PREFIX=$CACHE_DIR/redis_$VERSION/ install
+	cp -r $CACHE_DIR/redis_$VERSION/* $INSTALL_DIR/
+else
+	echo "Installing redis from cache" | indent
+	cp -r $CACHE_DIR/redis_$VERSION/*  $INSTALL_DIR/
+fi
+
+set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
+
+echo "Done" | indent
+
