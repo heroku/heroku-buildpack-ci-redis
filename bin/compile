@@ -44,6 +44,6 @@ else
 fi
 
 set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
+echo "redis-server </dev/null &> /dev/null &" >> $PROFILE_PATH
 
 echo "Done" | indent
-
