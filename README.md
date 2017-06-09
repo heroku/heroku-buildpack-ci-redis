@@ -1,25 +1,16 @@
-Heroku buildpack: redis
-======================
+**Warning** this is an experimental buildpack and is provided as-is without any
+promise of support.
 
-This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks)
-for adding redis to your application.
+# Heroku CI buildpack: Redis
 
-Testing
--------
-heroku build -b .
+This experimental [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks)
+vendors Redis into the dyno. It is intended for use with Heroku CI or any
+other environment where data retention is not important.
 
+Please note that Redis will loose all data each time a dyno restarts.
 
-Multipacks
-----------
+## Usage
 
-More likely, you'll want to use it as part of a larger project, which needs to use redis. The easiest way to do this is with a [multipack](https://github.com/ddollar/heroku-buildpack-multi),
-where this is just one of the buildpacks you'll be working with.
-
-    $ cat .buildpacks
-    git://github.com/heroku/heroku-buildpack-ruby.git
-    git://github.com/dz0ny/heroku-buildpack-redis.git
-
-    $ heroku config:add BUILDPACK_URL=git://github.com/ddollar/heroku-buildpack-multi.git
-
-This will bundle redis into your instance without impacting your existing
-system.
+The first run of this buildpack will take a while as Redis is downloaded and
+compiled. Thereafter the compiled version will be cached. Redis will start locally
+and be available on `redis://127.0.0.1:6379`
