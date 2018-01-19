@@ -13,4 +13,4 @@ Please note that Redis will loose all data each time a dyno restarts.
 
 The first run of this buildpack will take a while as Redis is downloaded and
 compiled. Thereafter the compiled version will be cached. Redis will start locally
-and be available on `redis://127.0.0.1:6379`
+and be available on `redis://127.0.0.1:6379` available in the `REDIS_URL` environment variable.
