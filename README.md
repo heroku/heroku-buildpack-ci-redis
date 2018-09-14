@@ -19,4 +19,4 @@ and be available on `redis://127.0.0.1:6379` available in the `REDIS_URL` enviro
 
 Make sure you publish this buildpack in the buildpack registry
 
-`heroku buildpacks:publish heroku/ci-redis`
+`heroku buildpacks:publish heroku/ci-redis master`
