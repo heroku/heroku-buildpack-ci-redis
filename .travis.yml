@@ -1,2 +1,9 @@
-sudo: false
-script: exit 0
+language: bash
+services:
+  - docker
+env:
+  - STACK=cedar-14
+  - STACK=heroku-16
+  - STACK=heroku-18
+script:
+  - ./bin/test.sh "${STACK}"
