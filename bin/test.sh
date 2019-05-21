@@ -22,6 +22,7 @@ echo "Building buildpack on stack ${STACK}..."
 docker build \
     --build-arg "BUILD_IMAGE=${BUILD_IMAGE}" \
     --build-arg "RUNTIME_IMAGE=${RUNTIME_IMAGE}" \
+    ${REDIS_VERSION:+--build-arg "REDIS_VERSION=${REDIS_VERSION}"} \
     -t "${OUTPUT_IMAGE}" \
     .
 

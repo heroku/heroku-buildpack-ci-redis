@@ -2,8 +2,14 @@ language: bash
 services:
   - docker
 env:
-  - STACK=cedar-14
-  - STACK=heroku-16
+  - STACK=cedar-14 REDIS_VERSION=3
+  - STACK=cedar-14 REDIS_VERSION=4
+  - STACK=heroku-16 REDIS_VERSION=3
+  - STACK=heroku-16 REDIS_VERSION=4
+  - STACK=heroku-16 REDIS_VERSION=5
+  # The default version (currently 3)
   - STACK=heroku-18
+  - STACK=heroku-18 REDIS_VERSION=4
+  - STACK=heroku-18 REDIS_VERSION=5.0.5
 script:
   - ./bin/test.sh "${STACK}"
