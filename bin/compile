@@ -20,10 +20,18 @@ mktmpdir() {
 
 BUILD_DIR=$1
 CACHE_DIR=$2
-VERSION="3.2.12"
 REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
+
+DEFAULT_VERSION="3"
+VERSION="${REDIS_VERSION:-$DEFAULT_VERSION}"
+
+case "${VERSION}" in
+  3) VERSION="3.2.12";;
+  4) VERSION="4.0.14";;
+  5) VERSION="5.0.5";;
+esac
 
 mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
@@ -32,7 +40,7 @@ mkdir -p $CACHE_DIR
 if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
 	echo "Fetching and installing redis" | indent
 	cd $REDIS_BUILD
-	curl -OL "http://download.redis.io/releases/redis-$VERSION.tar.gz"
+	curl -OLf "http://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
 	cd "redis-$VERSION"
 	make
