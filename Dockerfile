@@ -3,8 +3,6 @@ ARG RUNTIME_IMAGE
 
 FROM $BUILD_IMAGE as builder
 
-ARG REDIS_VERSION
-
 RUN mkdir -p /build /cache /env
 COPY . /buildpack
 RUN /buildpack/bin/detect /build
