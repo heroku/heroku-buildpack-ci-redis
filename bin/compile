@@ -63,4 +63,4 @@ set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
 set-env REDIS_URL "redis://h:$PASSWORD@localhost:6379/"
 echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
 
-echo "-----> redis done"
+echo "-----> Redis done"
