@@ -26,12 +26,12 @@ docker build \
     -t "${OUTPUT_IMAGE}" \
     .
 
-echo "Checking redis-server responds to ping command..."
+echo "Checking redis-server presence and version..."
 
 # Redis <4 does not support connection URLs so REDIS_URL has to be parsed:
 # https://stackoverflow.com/questions/38271281/can-i-use-redis-cli-with-a-connection-url
 REDIS_CONNECTION_ARGS="\$(echo \${REDIS_URL} | sed 's_redis://h:\(.*\)@\(.*\):\(.*\)/_-h \2 -p \3 -a \1_')"
-TEST_COMMAND="source .profile.d/redis.sh && redis-cli ${REDIS_CONNECTION_ARGS} ping"
+TEST_COMMAND="source .profile.d/redis.sh && redis-cli ${REDIS_CONNECTION_ARGS} info | grep redis_version:${REDIS_VERSION:-}"
 docker run --rm -it "${OUTPUT_IMAGE}" bash -c "${TEST_COMMAND}"
 
 echo "Success!"
