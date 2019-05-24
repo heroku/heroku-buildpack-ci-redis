@@ -6,13 +6,10 @@ set -euo pipefail
 
 STACK="${1}"
 
-# Converts eg "heroku-18" -> "heroku/heroku:18".
-RUNTIME_IMAGE="heroku/${STACK/-/:}"
-
 if [[ "${STACK}" == "cedar-14" ]]; then
-    BUILD_IMAGE="${RUNTIME_IMAGE}"
+    BASE_IMAGE="heroku/${STACK/-/:}"
 else
-    BUILD_IMAGE="${RUNTIME_IMAGE}-build"
+    BASE_IMAGE="heroku/${STACK/-/:}-build"
 fi
 
 OUTPUT_IMAGE="redis-test-${STACK}"
@@ -20,8 +17,7 @@ OUTPUT_IMAGE="redis-test-${STACK}"
 echo "Building buildpack on stack ${STACK}..."
 
 docker build \
-    --build-arg "BUILD_IMAGE=${BUILD_IMAGE}" \
-    --build-arg "RUNTIME_IMAGE=${RUNTIME_IMAGE}" \
+    --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     ${REDIS_VERSION:+--build-arg "REDIS_VERSION=${REDIS_VERSION}"} \
     -t "${OUTPUT_IMAGE}" \
     .
