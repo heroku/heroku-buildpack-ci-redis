@@ -9,8 +9,10 @@ ARG REDIS_VERSION
 RUN mkdir -p /build /cache /env
 RUN [ -z "${REDIS_VERSION}" ] || echo "${REDIS_VERSION}" > /env/REDIS_VERSION
 COPY . /buildpack
-RUN /buildpack/bin/detect /build
-RUN /buildpack/bin/compile /build /cache /env
+# Sanitize the environment seen by the buildpack, to prevent reliance on
+# environment variables that won't be present when it's run by Heroku CI.
+RUN env -i PATH=$PATH HOME=$HOME /buildpack/bin/detect /build
+RUN env -i PATH=$PATH HOME=$HOME /buildpack/bin/compile /build /cache /env
 
 # Use the standard stack image for testing, to catch missing runtime dependencies.
 FROM $RUNTIME_IMAGE
