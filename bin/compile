@@ -20,12 +20,17 @@ mktmpdir() {
 
 BUILD_DIR=$1
 CACHE_DIR=$2
+ENV_DIR=$3
 REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
 
 DEFAULT_VERSION="3"
-VERSION="${REDIS_VERSION:-$DEFAULT_VERSION}"
+if [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
+  VERSION="$(cat ${ENV_DIR}/REDIS_VERSION)"
+else
+  VERSION="${DEFAULT_VERSION}"
+fi
 
 case "${VERSION}" in
   3) VERSION="3.2.12";;
@@ -33,12 +38,14 @@ case "${VERSION}" in
   5) VERSION="5.0.5";;
 esac
 
+echo "Using redis version: ${VERSION}" | indent
+
 mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
 mkdir -p $CACHE_DIR
 
 if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
-	echo "Fetching and installing redis" | indent
+	echo "-----> Downloading and installing redis into slug"
 	cd $REDIS_BUILD
 	curl -OLf "http://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
@@ -47,7 +54,7 @@ if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
 	make PREFIX=$CACHE_DIR/redis_$VERSION/ install
 	cp -r $CACHE_DIR/redis_$VERSION/* $INSTALL_DIR/
 else
-	echo "Installing redis from cache" | indent
+	echo "-----> Fetching redis from cache into slug"
 	cp -r $CACHE_DIR/redis_$VERSION/*  $INSTALL_DIR/
 fi
 
@@ -56,4 +63,4 @@ set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
 set-env REDIS_URL "redis://h:$PASSWORD@localhost:6379/"
 echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
 
-echo "Done" | indent
+echo "-----> Redis done"
