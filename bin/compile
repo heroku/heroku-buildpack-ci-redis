@@ -25,7 +25,7 @@ REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
 
-DEFAULT_VERSION="3"
+DEFAULT_VERSION="4"
 if [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
   VERSION="$(cat ${ENV_DIR}/REDIS_VERSION)"
 else
