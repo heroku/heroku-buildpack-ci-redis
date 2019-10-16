@@ -14,6 +14,6 @@ env:
   # The default version.
   - STACK=heroku-18
   # An exact point release version.
-  - STACK=heroku-18 REDIS_VERSION=5.0.5
+  - STACK=heroku-18 REDIS_VERSION=5.0.6
 script:
   - ./bin/test.sh "${STACK}"
