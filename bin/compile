@@ -22,7 +22,7 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 REDIS_BUILD="$(mktmpdir redis)"
-INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
+INSTALL_DIR="$BUILD_DIR/.indyno/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
 
 DEFAULT_VERSION="5"
@@ -59,7 +59,7 @@ else
 fi
 
 PASSWORD=`openssl rand -hex 16`
-set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
+set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 set-env REDIS_URL "redis://h:$PASSWORD@localhost:6379/"
 echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
 
