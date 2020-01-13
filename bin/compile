@@ -21,6 +21,7 @@ mktmpdir() {
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
+BUILDPACK_DIR="$(dirname $(dirname $0))"
 REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.indyno/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
@@ -62,5 +63,12 @@ PASSWORD=`openssl rand -hex 16`
 set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 set-env REDIS_URL "redis://h:$PASSWORD@localhost:6379/"
 echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
+
+# ensure the redis-server is started during CI runs as the buildpack runner will terminate redis-server between buildpacks and .profile.d is too late
+cat<<EOF > $BUILDPACK_DIR/background
+PATH=$HOME/.indyno/vendor/redis/bin:$PATH
+export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
+echo requirepass $PASSWORD | redis-server - &> /dev/null &
+EOF
 
 echo "-----> Redis done"
