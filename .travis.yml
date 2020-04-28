@@ -11,6 +11,9 @@ env:
   - STACK=heroku-18 REDIS_VERSION=3
   - STACK=heroku-18 REDIS_VERSION=4
   - STACK=heroku-18 REDIS_VERSION=5
+  - STACK=heroku-20 REDIS_VERSION=3
+  - STACK=heroku-20 REDIS_VERSION=4
+  - STACK=heroku-20 REDIS_VERSION=5
   # The default version.
   - STACK=heroku-18
   # An exact point release version.
