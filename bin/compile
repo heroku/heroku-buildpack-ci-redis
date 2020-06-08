@@ -49,7 +49,7 @@ CACHED_REDIS_DIR="${CACHE_DIR}/redis_${STACK}_${VERSION}"
 
 if [ ! -d "${CACHED_REDIS_DIR}" ]; then
 	echo "-----> Downloading and installing redis into slug"
-  rm -rf "${CACHE_DIR}"/redis_*
+	rm -rf "${CACHE_DIR}"/redis_*
 	cd $REDIS_BUILD
 	curl -OLf "http://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
