@@ -45,18 +45,21 @@ mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
 mkdir -p $CACHE_DIR
 
-if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
+CACHED_REDIS_DIR="${CACHE_DIR}/redis_${STACK}_${VERSION}"
+
+if [ ! -d "${CACHED_REDIS_DIR}" ]; then
 	echo "-----> Downloading and installing redis into slug"
+	rm -rf "${CACHE_DIR}"/redis_*
 	cd $REDIS_BUILD
 	curl -OLf "http://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
 	cd "redis-$VERSION"
 	make
-	make PREFIX=$CACHE_DIR/redis_$VERSION/ install
-	cp -r $CACHE_DIR/redis_$VERSION/* $INSTALL_DIR/
+	make PREFIX="${CACHED_REDIS_DIR}/" install
+	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
 else
 	echo "-----> Fetching redis from cache into slug"
-	cp -r $CACHE_DIR/redis_$VERSION/*  $INSTALL_DIR/
+	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
 fi
 
 set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
