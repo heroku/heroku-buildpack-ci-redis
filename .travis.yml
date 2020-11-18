@@ -8,15 +8,18 @@ env:
   - STACK=heroku-16 REDIS_VERSION=3
   - STACK=heroku-16 REDIS_VERSION=4
   - STACK=heroku-16 REDIS_VERSION=5
+  - STACK=heroku-16 REDIS_VERSION=6
   - STACK=heroku-18 REDIS_VERSION=3
   - STACK=heroku-18 REDIS_VERSION=4
   - STACK=heroku-18 REDIS_VERSION=5
+  - STACK=heroku-18 REDIS_VERSION=6
   - STACK=heroku-20 REDIS_VERSION=3
   - STACK=heroku-20 REDIS_VERSION=4
   - STACK=heroku-20 REDIS_VERSION=5
+  - STACK=heroku-20 REDIS_VERSION=6
   # The default version.
   - STACK=heroku-18
   # An exact point release version.
-  - STACK=heroku-18 REDIS_VERSION=5.0.6
+  - STACK=heroku-18 REDIS_VERSION=6.0.9
 script:
   - ./bin/test.sh "${STACK}"
