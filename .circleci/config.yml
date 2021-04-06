@@ -1,0 +1,70 @@
+version: 2.1
+orbs:
+  docker: circleci/docker@1.5.0
+jobs:
+  test:
+    parameters:
+      stack:
+        type: string
+      redis_version:
+        type: string
+    docker:
+      - image: cimg/base:2020.01
+    environment:
+      STACK: << parameters.stack >>
+      REDIS_VERSION: << parameters.redis_version >>
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: "Running test"
+          command: ./bin/test.sh "${STACK}"
+
+workflows:
+  main:
+    jobs:
+      - test:
+          stack: heroku-16
+          redis_version: "3"
+      - test:
+          stack: heroku-16
+          redis_version: "4"
+      - test:
+          stack: heroku-16
+          redis_version: "5"
+      - test:
+          stack: heroku-16
+          redis_version: "6"
+      - test:
+          stack: heroku-18
+          redis_version: "3"
+      - test:
+          stack: heroku-18
+          redis_version: "4"
+      - test:
+          stack: heroku-18
+          redis_version: "5"
+      - test:
+          stack: heroku-18
+          redis_version: "6"
+      - test:
+          stack: heroku-20
+          redis_version: "3"
+      - test:
+          stack: heroku-20
+          redis_version: "4"
+      - test:
+          stack: heroku-20
+          redis_version: "5"
+      - test:
+          stack: heroku-20
+          redis_version: "6"
+      # The default version.
+      - test:
+          stack: heroku-18
+          redis_version: ""
+      # An exact point release version.
+      - test:
+          stack: heroku-20
+          redis_version: "6.0.9"
