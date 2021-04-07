@@ -25,41 +25,10 @@ workflows:
   main:
     jobs:
       - test:
-          stack: heroku-16
-          redis_version: "3"
-      - test:
-          stack: heroku-16
-          redis_version: "4"
-      - test:
-          stack: heroku-16
-          redis_version: "5"
-      - test:
-          stack: heroku-16
-          redis_version: "6"
-      - test:
-          stack: heroku-18
-          redis_version: "3"
-      - test:
-          stack: heroku-18
-          redis_version: "4"
-      - test:
-          stack: heroku-18
-          redis_version: "5"
-      - test:
-          stack: heroku-18
-          redis_version: "6"
-      - test:
-          stack: heroku-20
-          redis_version: "3"
-      - test:
-          stack: heroku-20
-          redis_version: "4"
-      - test:
-          stack: heroku-20
-          redis_version: "5"
-      - test:
-          stack: heroku-20
-          redis_version: "6"
+          matrix:
+            parameters:
+              stack: [heroku-16, heroku-18, heroku-20]
+              redis_version: ["3", "4", "5", "6"]
       # The default version.
       - test:
           stack: heroku-18
