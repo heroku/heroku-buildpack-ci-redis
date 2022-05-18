@@ -17,7 +17,7 @@ and be available on `redis://127.0.0.1:6379` available in the `REDIS_URL` enviro
 
 By default Redis 6 is used, however you can specify a `REDIS_VERSION` in the `env` section of your
 [app.json](https://devcenter.heroku.com/articles/heroku-ci#environment-variables-env-key)
-to use a different major (e.g. "4" or "5") or exact (e.g. "5.0.5") version. This feature
+to use a different major (e.g. "4" or "5") or exact (e.g. "6.0.16") version. This feature
 is experimental and subject to change.
 
 ## Releasing a new version
