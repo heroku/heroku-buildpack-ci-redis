@@ -65,7 +65,14 @@ fi
 
 set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
-export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
+
+# placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
+if [[ "${VERSION}" == 6* ]]; then
+	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
+else
+	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
+fi
+
 set-env REDIS_URL "$REDIS_URL"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
 echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
