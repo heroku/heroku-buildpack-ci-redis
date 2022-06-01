@@ -67,7 +67,7 @@ set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
 
 # placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
-if [[ "${VERSION}" == 6* ]]; then
+if [[ "${VERSION}" == 6.* ]]; then
 	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
 else
 	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
