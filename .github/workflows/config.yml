@@ -17,3 +17,13 @@ jobs:
       run: ./bin/test.sh ${{ matrix.stack }}
       env:
         REDIS_VERSION: ${{ matrix.redis_version }}
+
+  # dummy job to wait and block merge until all jobs have completed
+  done:
+    runs-on: ubuntu-latest
+
+    needs: [test]
+
+    steps:
+      - run: echo done
+        working-directory: /
