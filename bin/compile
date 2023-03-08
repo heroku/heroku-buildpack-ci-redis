@@ -26,7 +26,7 @@ REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.indyno/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
 
-DEFAULT_VERSION="6"
+DEFAULT_VERSION="7"
 if [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
   VERSION="$(cat ${ENV_DIR}/REDIS_VERSION)"
 else
@@ -38,6 +38,7 @@ case "${VERSION}" in
   4) VERSION="4.0.14";;
   5) VERSION="5.0.14";;
   6) VERSION="6.2.11";;
+  7) VERSION="7.0.9";;
 esac
 
 echo "Using redis version: ${VERSION}" | indent

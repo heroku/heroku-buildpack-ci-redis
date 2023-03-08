@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         stack: [heroku-18, heroku-20, heroku-22]
-        redis_version: ["", "4", "5", "6", "6.0.17"]
+        redis_version: ["", "4", "5", "6", "6.0.17", "7.0.9"]
     runs-on: ubuntu-latest
 
     steps:
