@@ -38,6 +38,7 @@ case "${VERSION}" in
   4) VERSION="4.0.14";;
   5) VERSION="5.0.14";;
   6) VERSION="6.2.11";;
+  7) VERSION="7.0.9";;
 esac
 
 echo "Using redis version: ${VERSION}" | indent
