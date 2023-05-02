@@ -37,8 +37,8 @@ case "${VERSION}" in
   3) VERSION="3.2.13";;
   4) VERSION="4.0.14";;
   5) VERSION="5.0.14";;
-  6) VERSION="6.2.11";;
-  7) VERSION="7.0.9";;
+  6|6.2) VERSION="6.2.12";;
+  7|7.0) VERSION="7.0.11";;
 esac
 
 echo "Using redis version: ${VERSION}" | indent
@@ -68,10 +68,10 @@ set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
 
 # placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
-if [[ "${VERSION}" > 5.* ]]; then
-	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
-else
+if dpkg --compare-versions "$VERSION" "lt" 6; then
 	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
+else
+	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
 fi
 
 set-env REDIS_URL "$REDIS_URL"
