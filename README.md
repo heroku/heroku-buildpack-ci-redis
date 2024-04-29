@@ -7,7 +7,7 @@ This experimental [Heroku buildpack](http://devcenter.heroku.com/articles/buildp
 vendors Redis into the dyno. It is intended for use with Heroku CI or any
 other environment where data retention is not important.
 
-Please note that Redis will loose all data each time a dyno restarts.
+Please note that Redis will lose all data each time a dyno restarts.
 
 ## Usage
 
@@ -22,6 +22,7 @@ is experimental and subject to change.
 
 ## Releasing a new version
 
-Make sure you publish this buildpack in the buildpack registry
+Make sure you publish this buildpack in the buildpack registry. Only members of
+`heroku-langages` team can publish this buildpack.
 
 `heroku buildpacks:publish heroku/ci-redis master`
