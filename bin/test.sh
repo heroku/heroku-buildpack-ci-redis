@@ -29,8 +29,8 @@ fi
 
 # Redis <4 does not support connection URLs so REDIS_URL has to be parsed:
 # https://stackoverflow.com/questions/38271281/can-i-use-redis-cli-with-a-connection-url
-REDIS_CONNECTION_ARGS="\$(echo \${REDIS_URL} | sed 's_rediss\{0,1\}://\(.*\):\(.*\)@\(.*\):\(.*\)/_-h \3 -p \4 -a \2_')"
-TEST_COMMAND="source .profile.d/redis.sh && sleep 1 && redis-cli ${REDIS_TLS_ARGS} ${REDIS_CONNECTION_ARGS} info | grep redis_version:${REDIS_VERSION:-}"
+REDIS_CONNECTION_ARGS="\$(echo \${REDIS_URL} | sed 's_rediss\{0,1\}://\(.*\):\(.*\)@\(.*\):\(.*\)_-h \3 -p \4_')"
+TEST_COMMAND="source .profile.d/redis.sh && sleep 1 && redis-cli ${REDIS_CONNECTION_ARGS} ${REDIS_TLS_ARGS} info | grep redis_version:${REDIS_VERSION:-}"
 docker run --rm -t "${OUTPUT_IMAGE}" bash -c "${TEST_COMMAND}"
 
 echo "Success!"

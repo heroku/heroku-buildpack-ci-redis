@@ -121,10 +121,10 @@ set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
 PASSWORD=$(openssl rand -hex 32)
 
 SERVER_COMMAND="echo requirepass $PASSWORD | redis-server - &> /dev/null &"
-REDIS_URL="redis://:$PASSWORD@localhost:6379/"
+REDIS_URL="redis://:$PASSWORD@localhost:6379"
 
 if [ -n "$REDIS_CI_TLS" ]; then
-  REDIS_URL="rediss://:$PASSWORD@localhost:6379/"
+  REDIS_URL="rediss://:$PASSWORD@localhost:6379"
   SERVER_COMMAND="redis-server $INSTALL_DIR/redis.conf &> /dev/null &"
 
   mkcert \
@@ -142,6 +142,7 @@ if [ -n "$REDIS_CI_TLS" ]; then
 fi
 
 set-env REDIS_URL "$REDIS_URL"
+set-env REDISCLI_AUTH "$PASSWORD"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
 echo "$SERVER_COMMAND" >> $PROFILE_PATH
 
