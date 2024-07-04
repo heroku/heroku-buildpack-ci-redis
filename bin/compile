@@ -18,6 +18,46 @@ mktmpdir() {
   echo $dir
 }
 
+mkcert() {
+  keyout=$1
+  certout=$2
+  cakeyout=$3
+  cacertout=$4
+
+  openssl genrsa -out $cakeyout 4096
+  openssl genrsa -out $keyout 2048
+
+  openssl req \
+    -x509 -new -nodes -sha256 \
+    -subj "/O=Heroku CI/CN=Ceritificate Authority" \
+    -days 3650 \
+    -key "$cakeyout" \
+    -out "$cacertout"
+
+  openssl req \
+    -new -sha256 \
+    -subj "/O=Heroku CI/CN=localhost" \
+    -key "$keyout" | \
+    openssl x509 -req -sha256 \
+      -CA "$cacertout" \
+      -CAkey "$cakeyout" \
+      -CAcreateserial \
+      -days 365 \
+      -out "$certout"
+}
+
+mkredisconf() {
+  cat <<EOF > $1
+port 0
+tls-port 6379
+tls-auth-clients optional
+tls-cert-file $2
+tls-key-file $3
+tls-ca-cert-file $4
+requirepass $5
+EOF
+}
+
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
@@ -33,6 +73,12 @@ else
   VERSION="${DEFAULT_VERSION}"
 fi
 
+if [ -f "${ENV_DIR}/REDIS_CI_TLS" ]; then
+  export REDIS_CI_TLS="$(cat ${ENV_DIR}/REDIS_CI_TLS)"
+fi
+
+SERVICE_MIN_VER="6.2"
+
 case "${VERSION}" in
   3) VERSION="3.2.13";;
   4) VERSION="4.0.14";;
@@ -40,6 +86,13 @@ case "${VERSION}" in
   6|6.2) VERSION="6.2.12";;
   7|7.0) VERSION="7.0.11";;
 esac
+
+if dpkg --compare-versions "$VERSION" "lt" "${SERVICE_MIN_VER}"; then
+  echo "!      Unsupported service version: $VERSION" && \
+  echo "!      Set REDIS_VERSION to $SERVICE_MIN_VER or higher in your app.json" && \
+  echo "!      See https://devcenter.heroku.com/articles/heroku-redis#version-support-and-legacy-infrastructure" && \
+  exit 1
+fi
 
 echo "Using redis version: ${VERSION}" | indent
 
@@ -56,7 +109,7 @@ if [ ! -d "${CACHED_REDIS_DIR}" ]; then
 	curl -OLf "https://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
 	cd "redis-$VERSION"
-	make
+	make BUILD_TLS=yes
 	make PREFIX="${CACHED_REDIS_DIR}/" install
 	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
 else
@@ -65,24 +118,38 @@ else
 fi
 
 set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
-PASSWORD=`openssl rand -hex 16`
+PASSWORD=$(openssl rand -hex 32)
 
-# placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
-if dpkg --compare-versions "$VERSION" "lt" 6; then
-	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
-else
-	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
+SERVER_COMMAND="echo requirepass $PASSWORD | redis-server - &> /dev/null &"
+REDIS_URL="redis://:$PASSWORD@localhost:6379/"
+
+if [ -n "$REDIS_CI_TLS" ]; then
+  REDIS_URL="rediss://:$PASSWORD@localhost:6379/"
+  SERVER_COMMAND="redis-server $INSTALL_DIR/redis.conf &> /dev/null &"
+
+  mkcert \
+    $INSTALL_DIR/server.key \
+    $INSTALL_DIR/server.crt \
+    $INSTALL_DIR/ca.key \
+    $INSTALL_DIR/ca.crt
+
+  mkredisconf \
+    $INSTALL_DIR/redis.conf \
+    $INSTALL_DIR/server.crt \
+    $INSTALL_DIR/server.key \
+    $INSTALL_DIR/ca.crt \
+    $PASSWORD
 fi
 
 set-env REDIS_URL "$REDIS_URL"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
-echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
+echo "$SERVER_COMMAND" >> $PROFILE_PATH
 
 # ensure the redis-server is started during CI runs as the buildpack runner will terminate redis-server between buildpacks and .profile.d is too late
 cat<<EOF > $BUILDPACK_DIR/background
 PATH=$HOME/.indyno/vendor/redis/bin:$PATH
 export REDIS_URL="$REDIS_URL"
-echo requirepass $PASSWORD | redis-server - &> /dev/null &
+$SERVER_COMMAND
 EOF
 
 echo "-----> Redis done"
