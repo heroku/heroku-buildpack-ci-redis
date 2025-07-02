@@ -6,12 +6,12 @@ jobs:
   test:
     strategy:
       matrix:
-        stack: [heroku-20, heroku-22, heroku-24]
-        redis_version: ["", "4", "5", "6", "6.2", "7", "7.0", "7.2", "7.0.11"]
+        stack: [heroku-22, heroku-24]
+        redis_version: ["", "7", "8"]
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Run Test
       run: ./bin/test.sh ${{ matrix.stack }}

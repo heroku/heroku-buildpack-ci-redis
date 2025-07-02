@@ -22,11 +22,12 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 BUILDPACK_DIR="$(dirname $(dirname $0))"
-REDIS_BUILD="$(mktmpdir redis)"
-INSTALL_DIR="$BUILD_DIR/.indyno/vendor/redis"
-PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
+VALKEY_BUILD="$(mktmpdir valkey)"
+INSTALL_DIR="$BUILD_DIR/.indyno/vendor/valkey"
+PROFILE_PATH="$BUILD_DIR/.profile.d/valkey.sh"
+SERVICE_MIN_VER="7"
 
-DEFAULT_VERSION="7"
+DEFAULT_VERSION="8"
 if [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
   VERSION="$(cat ${ENV_DIR}/REDIS_VERSION)"
 else
@@ -34,56 +35,53 @@ else
 fi
 
 case "${VERSION}" in
-  3) VERSION="3.2.13";;
-  4) VERSION="4.0.14";;
-  5) VERSION="5.0.14";;
-  6|6.2) VERSION="6.2.12";;
-  7|7.0) VERSION="7.0.11";;
-  7.2) VERSION="7.2.5";;
+  7|7.0|7.2) VERSION="7.2.9";;
+  8|8.0|8.1) VERSION="8.1.1";;
 esac
 
-echo "Using redis version: ${VERSION}" | indent
+if dpkg --compare-versions "$VERSION" "lt" "${SERVICE_MIN_VER}"; then
+  echo "!      Unsupported service version: $VERSION" && \
+  echo "!      Set REDIS_VERSION to $SERVICE_MIN_VER or higher in your app.json" && \
+  echo "!      See https://devcenter.heroku.com/articles/heroku-redis#version-support-and-legacy-infrastructure" && \
+  exit 1
+fi
+
+echo "Using valkey version: ${VERSION}" | indent
 
 mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
 mkdir -p $CACHE_DIR
 
-CACHED_REDIS_DIR="${CACHE_DIR}/redis_${STACK}_${VERSION}"
+CACHED_REDIS_DIR="${CACHE_DIR}/valkey_${STACK}_${VERSION}"
 
 if [ ! -d "${CACHED_REDIS_DIR}" ]; then
-	echo "-----> Downloading and installing redis into slug"
-	rm -rf "${CACHE_DIR}"/redis_*
-	cd $REDIS_BUILD
-	curl -OLf "https://download.redis.io/releases/redis-$VERSION.tar.gz"
-	tar zxvf "redis-$VERSION.tar.gz"
-	cd "redis-$VERSION"
-	make
+	echo "-----> Downloading and installing valkey into slug"
+	rm -rf "${CACHE_DIR}"/valkey_*
+	cd $VALKEY_BUILD
+	curl -Lf "https://github.com/valkey-io/valkey/archive/refs/tags/${VERSION}.tar.gz" -o "valkey-$VERSION.tar.gz"
+	tar zxvf "valkey-$VERSION.tar.gz"
+	cd "valkey-$VERSION"
+	make BUILD_TLS=yes -j "$(nproc)"
 	make PREFIX="${CACHED_REDIS_DIR}/" install
 	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
 else
-	echo "-----> Fetching redis from cache into slug"
+	echo "-----> Fetching valkey from cache into slug"
 	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
 fi
 
-set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
+set-env PATH '/app/.indyno/vendor/valkey/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
-
-# placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
-if dpkg --compare-versions "$VERSION" "lt" 6; then
-	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
-else
-	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
-fi
+export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
 
 set-env REDIS_URL "$REDIS_URL"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
-echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
+echo "echo requirepass $PASSWORD | valkey-server - &> /dev/null &" >> $PROFILE_PATH
 
-# ensure the redis-server is started during CI runs as the buildpack runner will terminate redis-server between buildpacks and .profile.d is too late
+# ensure the valkey-server is started during CI runs as the buildpack runner will terminate redis-server between buildpacks and .profile.d is too late
 cat<<EOF > $BUILDPACK_DIR/background
-PATH=$HOME/.indyno/vendor/redis/bin:$PATH
+PATH=$HOME/.indyno/vendor/valkey/bin:$PATH
 export REDIS_URL="$REDIS_URL"
-echo requirepass $PASSWORD | redis-server - &> /dev/null &
+echo requirepass $PASSWORD | valkey-server - &> /dev/null &
 EOF
 
-echo "-----> Redis done"
+echo "-----> Valkey done"
