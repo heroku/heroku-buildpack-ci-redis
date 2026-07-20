@@ -43,6 +43,8 @@ esac
 
 # Redis-era versions (< 7.2) are no longer supported; remap to the oldest
 # supported Valkey so existing customers don't hit unexpected failures.
+# Relies on dpkg, which is present on all Heroku stacks; bogus input (e.g.
+# "banana") fails the comparison and passes through to a 404 at download.
 if dpkg --compare-versions "$VERSION" lt "7.2" 2>/dev/null; then
   echo "WARNING: version ${VERSION} is unsupported; using oldest supported Valkey 7.2.13" | indent
   VERSION="7.2.13"
