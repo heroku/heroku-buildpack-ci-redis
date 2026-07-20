@@ -20,7 +20,7 @@ echo "Checking valkey-server presence and version..."
 
 # Valkey's INFO reports a fixed compatibility redis_version; the real version
 # is in the valkey_version field, so assert against that.
-VALKEY_CONNECTION_ARGS="\$(echo \${VALKEY_URL} | sed 's_redis://:\(.*\)@\(.*\):\(.*\)/_-h \2 -p \3 -a \1_')"
+VALKEY_CONNECTION_ARGS="\$(echo \${VALKEY_URL} | sed 's_redis://:\([^@]*\)@\([^:]*\):\([^/]*\)/_-h \2 -p \3 -a \1_')"
 TEST_COMMAND="source .profile.d/valkey.sh && sleep 1 && valkey-cli ${VALKEY_CONNECTION_ARGS} info | grep valkey_version:${VALKEY_VERSION:-}"
 docker run --rm -t "${OUTPUT_IMAGE}" bash -c "${TEST_COMMAND}"
 
