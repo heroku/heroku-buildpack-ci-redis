@@ -26,7 +26,13 @@ VALKEY_BUILD="$(mktmpdir valkey)"
 INSTALL_DIR="$BUILD_DIR/.indyno/vendor/valkey"
 PROFILE_PATH="$BUILD_DIR/.profile.d/valkey.sh"
 
+# Supported Valkey versions, oldest first. Single source of truth: the default,
+# the aliases (major like "8" or major.minor like "8.1"), and the oldest-supported
+# fallback are all derived from this list. To change support, edit only this line.
+SUPPORTED_VERSIONS=(7.2.13 8.1.8 9.1.0)
 DEFAULT_VERSION="8"
+OLDEST_VERSION="${SUPPORTED_VERSIONS[0]}"
+
 if [ -f "${ENV_DIR}/VALKEY_VERSION" ]; then
   VERSION="$(cat ${ENV_DIR}/VALKEY_VERSION)"
 elif [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
@@ -35,19 +41,24 @@ else
   VERSION="${DEFAULT_VERSION}"
 fi
 
-case "${VERSION}" in
-  7.2) VERSION="7.2.13";;
-  8|8.1) VERSION="8.1.8";;
-  9|9.1) VERSION="9.1.0";;
-esac
+# Resolve an alias (major or major.minor) or exact version to a supported pin,
+# preferring the newest match.
+resolved=""
+for v in "${SUPPORTED_VERSIONS[@]}"; do
+  case "${VERSION}" in
+    "$v"|"${v%.*}"|"${v%%.*}") resolved="$v";;
+  esac
+done
 
-# Redis-era versions (< 7.2) are no longer supported; remap to the oldest
-# supported Valkey so existing customers don't hit unexpected failures.
-# Relies on dpkg, which is present on all Heroku stacks; bogus input (e.g.
-# "banana") fails the comparison and passes through to a 404 at download.
-if dpkg --compare-versions "$VERSION" lt "7.2" 2>/dev/null; then
-  echo "WARNING: version ${VERSION} is unsupported; using oldest supported Valkey 7.2.13" | indent
-  VERSION="7.2.13"
+if [ -n "${resolved}" ]; then
+  VERSION="${resolved}"
+# Versions older than the oldest supported line (e.g. Redis-era 6.x) remap to
+# the oldest supported Valkey so existing customers don't hit unexpected
+# failures. dpkg is present on all Heroku stacks; bogus input (e.g. "banana")
+# fails the comparison and passes through to a 404 at download.
+elif dpkg --compare-versions "${VERSION}" lt "${OLDEST_VERSION%.*}" 2>/dev/null; then
+  echo "WARNING: version ${VERSION} is unsupported; using oldest supported Valkey ${OLDEST_VERSION}" | indent
+  VERSION="${OLDEST_VERSION}"
 fi
 
 echo "Using valkey version: ${VERSION}" | indent
