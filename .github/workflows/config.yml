@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         stack: [heroku-22, heroku-24, heroku-26]
-        valkey_version: ["", "7.2", "8", "8.1", "9", "9.1", "8.1.8"]
+        valkey_version: ["", "7.2", "8", "8.1", "9", "9.1", "7.2.13"]
     runs-on: ubuntu-latest
 
     steps:
