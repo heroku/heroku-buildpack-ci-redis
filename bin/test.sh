@@ -19,13 +19,16 @@ docker build \
 echo "Checking valkey-server presence and version..."
 
 # Valkey's INFO reports a fixed compatibility redis_version; the real version
-# is in the valkey_version field, so assert against that. valkey-cli -u parses
-# the URL directly, so it works whether or not the URL carries a username.
-# Both URLs are checked: on Valkey 9 they authenticate as different users
-# (VALKEY_URL as heroku, REDIS_URL as the default user).
-TEST_COMMAND="source .profile.d/valkey.sh && sleep 1 \
-  && valkey-cli -u \"\${VALKEY_URL}\" info | grep valkey_version:${VALKEY_VERSION:-} \
-  && valkey-cli -u \"\${REDIS_URL}\" info | grep valkey_version:${VALKEY_VERSION:-}"
+# is in the valkey_version field, so assert against that. The URLs carry an
+# empty username (redis://:pw@) to match Heroku Key-Value Store, but
+# valkey-cli -u would then send AUTH "" pw and fail, so extract the user and
+# password and pass them as flags: --user only when the URL names one (v9's
+# heroku ACL user), -a always. Both URLs are checked.
+CHECK='check() { url="$1"; user="${url#*://}"; user="${user%%:*}"; pw="${url%%@*}"; pw="${pw##*:}"; \
+  valkey-cli ${user:+--user "$user"} -a "$pw" info; }'
+TEST_COMMAND="source .profile.d/valkey.sh && sleep 1 && ${CHECK} \
+  && check \"\${VALKEY_URL}\" | grep valkey_version:${VALKEY_VERSION:-} \
+  && check \"\${REDIS_URL}\" | grep valkey_version:${VALKEY_VERSION:-}"
 docker run --rm -t "${OUTPUT_IMAGE}" bash -c "${TEST_COMMAND}"
 
 echo "Success!"

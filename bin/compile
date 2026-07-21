@@ -97,10 +97,7 @@ if dpkg --compare-versions "$VERSION" ge "9" 2>/dev/null; then
   URL="redis://heroku:$PASSWORD@localhost:6379/"
 else
   START_CMD="echo requirepass $PASSWORD | valkey-server - &> /dev/null &"
-  # Name the built-in "default" user explicitly. An empty username
-  # (redis://:pw@) makes valkey-cli send AUTH "" pw, which the server rejects
-  # with WRONGPASS; "default" works for both valkey-cli and client libraries.
-  URL="redis://default:$PASSWORD@localhost:6379/"
+  URL="redis://:$PASSWORD@localhost:6379/"
 fi
 VALKEY_URL="$URL"
 REDIS_URL="$URL"
