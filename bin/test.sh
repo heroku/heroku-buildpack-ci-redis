@@ -20,8 +20,12 @@ echo "Checking valkey-server presence and version..."
 
 # Valkey's INFO reports a fixed compatibility redis_version; the real version
 # is in the valkey_version field, so assert against that. valkey-cli -u parses
-# the URL directly, so it works whether or not VALKEY_URL carries a username.
-TEST_COMMAND="source .profile.d/valkey.sh && sleep 1 && valkey-cli -u \"\${VALKEY_URL}\" info | grep valkey_version:${VALKEY_VERSION:-}"
+# the URL directly, so it works whether or not the URL carries a username.
+# Both URLs are checked: on Valkey 9 they authenticate as different users
+# (VALKEY_URL as heroku, REDIS_URL as the default user).
+TEST_COMMAND="source .profile.d/valkey.sh && sleep 1 \
+  && valkey-cli -u \"\${VALKEY_URL}\" info | grep valkey_version:${VALKEY_VERSION:-} \
+  && valkey-cli -u \"\${REDIS_URL}\" info | grep valkey_version:${VALKEY_VERSION:-}"
 docker run --rm -t "${OUTPUT_IMAGE}" bash -c "${TEST_COMMAND}"
 
 echo "Success!"
