@@ -87,14 +87,25 @@ fi
 set-env PATH '/app/.indyno/vendor/valkey/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
 
-VALKEY_URL="redis://:$PASSWORD@localhost:6379/"
-REDIS_URL="$VALKEY_URL"
+# Valkey 9 ships with a "heroku" ACL user. Create it alongside the default user
+# (kept via requirepass) so both the legacy REDIS_URL (default user) and the
+# VALKEY_URL (heroku user) authenticate. Earlier versions have no such user.
+if dpkg --compare-versions "$VERSION" ge "9" 2>/dev/null; then
+  # `reset` first so our grant is deterministic regardless of the built-in
+  # heroku user's default ACL rules (user directives merge, they don't replace).
+  START_CMD="printf 'requirepass %s\nuser heroku reset on >%s ~* &* +@all\n' '$PASSWORD' '$PASSWORD' | valkey-server - &> /dev/null &"
+  VALKEY_URL="redis://heroku:$PASSWORD@localhost:6379/"
+else
+  START_CMD="echo requirepass $PASSWORD | valkey-server - &> /dev/null &"
+  VALKEY_URL="redis://:$PASSWORD@localhost:6379/"
+fi
+REDIS_URL="redis://:$PASSWORD@localhost:6379/"
 
 set-env REDIS_URL "$REDIS_URL"
 set-env VALKEY_URL "$VALKEY_URL"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
 echo "export VALKEY_URL=$VALKEY_URL" >> $BUILDPACK_DIR/export
-echo "echo requirepass $PASSWORD | valkey-server - &> /dev/null &" >> $PROFILE_PATH
+printf '%s\n' "$START_CMD" >> $PROFILE_PATH
 
 # ensure valkey-server is started during CI runs as the buildpack runner will
 # terminate it between buildpacks and .profile.d is too late
@@ -102,7 +113,7 @@ cat<<EOF > $BUILDPACK_DIR/background
 PATH=$HOME/.indyno/vendor/valkey/bin:$PATH
 export REDIS_URL="$REDIS_URL"
 export VALKEY_URL="$VALKEY_URL"
-echo requirepass $PASSWORD | valkey-server - &> /dev/null &
+$START_CMD
 EOF
 
 echo "-----> Valkey done"

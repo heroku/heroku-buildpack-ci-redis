@@ -10,7 +10,9 @@ Heroku CI or any other environment where data retention is not important.
 Please note that Valkey will lose all data each time a dyno restarts.
 
 Valkey is a drop-in replacement for Redis and speaks the same protocol, so the
-connection URL is exposed as both `VALKEY_URL` and `REDIS_URL`.
+connection URL is exposed as both `VALKEY_URL` and `REDIS_URL`. On Valkey 9 the
+`VALKEY_URL` authenticates as the `heroku` ACL user; `REDIS_URL` always uses the
+default user, so either variable works.
 
 ## Usage
 
