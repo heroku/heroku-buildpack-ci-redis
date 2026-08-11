@@ -22,68 +22,99 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 BUILDPACK_DIR="$(dirname $(dirname $0))"
-REDIS_BUILD="$(mktmpdir redis)"
-INSTALL_DIR="$BUILD_DIR/.indyno/vendor/redis"
-PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
+VALKEY_BUILD="$(mktmpdir valkey)"
+INSTALL_DIR="$BUILD_DIR/.indyno/vendor/valkey"
+PROFILE_PATH="$BUILD_DIR/.profile.d/valkey.sh"
 
-DEFAULT_VERSION="7"
-if [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
+# Supported Valkey versions, oldest first. Single source of truth: the default,
+# the aliases (major like "8" or major.minor like "8.1"), and the oldest-supported
+# fallback are all derived from this list. To change support, edit only this line.
+SUPPORTED_VERSIONS=(7.2.14 8.1.9 9.1.1)
+DEFAULT_VERSION="8"
+OLDEST_VERSION="${SUPPORTED_VERSIONS[0]}"
+
+if [ -f "${ENV_DIR}/VALKEY_VERSION" ]; then
+  VERSION="$(cat ${ENV_DIR}/VALKEY_VERSION)"
+elif [ -f "${ENV_DIR}/REDIS_VERSION" ]; then
   VERSION="$(cat ${ENV_DIR}/REDIS_VERSION)"
 else
   VERSION="${DEFAULT_VERSION}"
 fi
 
-case "${VERSION}" in
-  3) VERSION="3.2.13";;
-  4) VERSION="4.0.14";;
-  5) VERSION="5.0.14";;
-  6|6.2) VERSION="6.2.12";;
-  7|7.0) VERSION="7.0.11";;
-  7.2) VERSION="7.2.5";;
-esac
+# Resolve an alias (major or major.minor) or exact version to a supported pin,
+# preferring the newest match.
+resolved=""
+for v in "${SUPPORTED_VERSIONS[@]}"; do
+  case "${VERSION}" in
+    "$v"|"${v%.*}"|"${v%%.*}") resolved="$v";;
+  esac
+done
 
-echo "Using redis version: ${VERSION}" | indent
+if [ -n "${resolved}" ]; then
+  VERSION="${resolved}"
+# Versions older than the oldest supported line (e.g. Redis-era 6.x) remap to
+# the oldest supported Valkey so existing customers don't hit unexpected
+# failures. dpkg is present on all Heroku stacks; bogus input (e.g. "banana")
+# fails the comparison and passes through to a 404 at download.
+elif dpkg --compare-versions "${VERSION}" lt "${OLDEST_VERSION%.*}" 2>/dev/null; then
+  echo "WARNING: version ${VERSION} is unsupported; using oldest supported Valkey ${OLDEST_VERSION}" | indent
+  VERSION="${OLDEST_VERSION}"
+fi
+
+echo "Using valkey version: ${VERSION}" | indent
 
 mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
 mkdir -p $CACHE_DIR
 
-CACHED_REDIS_DIR="${CACHE_DIR}/redis_${STACK}_${VERSION}"
+CACHED_VALKEY_DIR="${CACHE_DIR}/valkey_${STACK}_${VERSION}"
 
-if [ ! -d "${CACHED_REDIS_DIR}" ]; then
-	echo "-----> Downloading and installing redis into slug"
-	rm -rf "${CACHE_DIR}"/redis_*
-	cd $REDIS_BUILD
-	curl -OLf "https://download.redis.io/releases/redis-$VERSION.tar.gz"
-	tar zxvf "redis-$VERSION.tar.gz"
-	cd "redis-$VERSION"
+if [ ! -d "${CACHED_VALKEY_DIR}" ]; then
+	echo "-----> Downloading and installing valkey into slug"
+	rm -rf "${CACHE_DIR}"/valkey_*
+	cd $VALKEY_BUILD
+	curl -OLf "https://github.com/valkey-io/valkey/archive/refs/tags/${VERSION}.tar.gz"
+	tar zxvf "${VERSION}.tar.gz"
+	cd "valkey-${VERSION}"
 	make
-	make PREFIX="${CACHED_REDIS_DIR}/" install
-	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
+	make PREFIX="${CACHED_VALKEY_DIR}/" install
+	cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
 else
-	echo "-----> Fetching redis from cache into slug"
-	cp -r "${CACHED_REDIS_DIR}"/* "${INSTALL_DIR}/"
+	echo "-----> Fetching valkey from cache into slug"
+	cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
 fi
 
-set-env PATH '/app/.indyno/vendor/redis/bin:$PATH'
+set-env PATH '/app/.indyno/vendor/valkey/bin:$PATH'
 PASSWORD=`openssl rand -hex 16`
 
-# placeholder username h was added for compatibility with old Redis clients (https://devcenter.heroku.com/changelog-items/1932) and is incompatible with Redis 6 AUTH
-if dpkg --compare-versions "$VERSION" "lt" 6; then
-	export REDIS_URL="redis://h:$PASSWORD@localhost:6379/"
+# Valkey 9 ships with a "heroku" ACL user. Create it (the default user stays
+# enabled via requirepass) and connect as it. Earlier versions have no such
+# user and connect as the default user. Both URLs are identical either way.
+if dpkg --compare-versions "$VERSION" ge "9" 2>/dev/null; then
+  # `reset` first so our grant is deterministic regardless of the built-in
+  # heroku user's default ACL rules (user directives merge, they don't replace).
+  START_CMD="printf 'requirepass %s\nuser heroku reset on >%s ~* &* +@all\n' '$PASSWORD' '$PASSWORD' | valkey-server - &> /dev/null &"
+  URL="redis://heroku:$PASSWORD@localhost:6379/"
 else
-	export REDIS_URL="redis://:$PASSWORD@localhost:6379/"
+  START_CMD="echo requirepass $PASSWORD | valkey-server - &> /dev/null &"
+  URL="redis://:$PASSWORD@localhost:6379/"
 fi
+VALKEY_URL="$URL"
+REDIS_URL="$URL"
 
 set-env REDIS_URL "$REDIS_URL"
+set-env VALKEY_URL "$VALKEY_URL"
 echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
-echo "echo requirepass $PASSWORD | redis-server - &> /dev/null &" >> $PROFILE_PATH
+echo "export VALKEY_URL=$VALKEY_URL" >> $BUILDPACK_DIR/export
+printf '%s\n' "$START_CMD" >> $PROFILE_PATH
 
-# ensure the redis-server is started during CI runs as the buildpack runner will terminate redis-server between buildpacks and .profile.d is too late
+# ensure valkey-server is started during CI runs as the buildpack runner will
+# terminate it between buildpacks and .profile.d is too late
 cat<<EOF > $BUILDPACK_DIR/background
-PATH=$HOME/.indyno/vendor/redis/bin:$PATH
+PATH=$HOME/.indyno/vendor/valkey/bin:$PATH
 export REDIS_URL="$REDIS_URL"
-echo requirepass $PASSWORD | redis-server - &> /dev/null &
+export VALKEY_URL="$VALKEY_URL"
+$START_CMD
 EOF
 
-echo "-----> Redis done"
+echo "-----> Valkey done"

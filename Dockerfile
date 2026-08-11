@@ -2,10 +2,10 @@ ARG BASE_IMAGE
 FROM $BASE_IMAGE
 USER root
 
-ARG REDIS_VERSION
+ARG VALKEY_VERSION
 
 RUN mkdir -p /app /cache /env
-RUN [ -z "${REDIS_VERSION}" ] || echo "${REDIS_VERSION}" > /env/REDIS_VERSION
+RUN [ -z "${VALKEY_VERSION}" ] || echo "${VALKEY_VERSION}" > /env/VALKEY_VERSION
 COPY . /buildpack
 # Sanitize the environment seen by the buildpack, to prevent reliance on
 # environment variables that won't be present when it's run by Heroku CI.
