@@ -29,7 +29,7 @@ PROFILE_PATH="$BUILD_DIR/.profile.d/valkey.sh"
 # Supported Valkey versions, oldest first. Single source of truth: the default,
 # the aliases (major like "8" or major.minor like "8.1"), and the oldest-supported
 # fallback are all derived from this list. To change support, edit only this line.
-SUPPORTED_VERSIONS=(7.2.14 8.1.9 9.1.1)
+SUPPORTED_VERSIONS=(7.2.15 8.1.11 9.1.3)
 DEFAULT_VERSION="9"
 OLDEST_VERSION="${SUPPORTED_VERSIONS[0]}"
 
