@@ -8,7 +8,7 @@ indent() {
 
 # Usage: $ set-env key value
 set-env() {
-  echo "export $1=$2" >> $PROFILE_PATH
+  echo "export $1=$2" >>$PROFILE_PATH
 }
 
 mktmpdir() {
@@ -30,7 +30,7 @@ PROFILE_PATH="$BUILD_DIR/.profile.d/valkey.sh"
 # the aliases (major like "8" or major.minor like "8.1"), and the oldest-supported
 # fallback are all derived from this list. To change support, edit only this line.
 SUPPORTED_VERSIONS=(7.2.14 8.1.9 9.1.1)
-DEFAULT_VERSION="8"
+DEFAULT_VERSION="9"
 OLDEST_VERSION="${SUPPORTED_VERSIONS[0]}"
 
 if [ -f "${ENV_DIR}/VALKEY_VERSION" ]; then
@@ -46,7 +46,7 @@ fi
 resolved=""
 for v in "${SUPPORTED_VERSIONS[@]}"; do
   case "${VERSION}" in
-    "$v"|"${v%.*}"|"${v%%.*}") resolved="$v";;
+  "$v" | "${v%.*}" | "${v%%.*}") resolved="$v" ;;
   esac
 done
 
@@ -70,22 +70,22 @@ mkdir -p $CACHE_DIR
 CACHED_VALKEY_DIR="${CACHE_DIR}/valkey_${STACK}_${VERSION}"
 
 if [ ! -d "${CACHED_VALKEY_DIR}" ]; then
-	echo "-----> Downloading and installing valkey into slug"
-	rm -rf "${CACHE_DIR}"/valkey_*
-	cd $VALKEY_BUILD
-	curl -OLf "https://github.com/valkey-io/valkey/archive/refs/tags/${VERSION}.tar.gz"
-	tar zxvf "${VERSION}.tar.gz"
-	cd "valkey-${VERSION}"
-	make
-	make PREFIX="${CACHED_VALKEY_DIR}/" install
-	cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
+  echo "-----> Downloading and installing valkey into slug"
+  rm -rf "${CACHE_DIR}"/valkey_*
+  cd $VALKEY_BUILD
+  curl -OLf "https://github.com/valkey-io/valkey/archive/refs/tags/${VERSION}.tar.gz"
+  tar zxvf "${VERSION}.tar.gz"
+  cd "valkey-${VERSION}"
+  make
+  make PREFIX="${CACHED_VALKEY_DIR}/" install
+  cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
 else
-	echo "-----> Fetching valkey from cache into slug"
-	cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
+  echo "-----> Fetching valkey from cache into slug"
+  cp -r "${CACHED_VALKEY_DIR}"/* "${INSTALL_DIR}/"
 fi
 
 set-env PATH '/app/.indyno/vendor/valkey/bin:$PATH'
-PASSWORD=`openssl rand -hex 16`
+PASSWORD=$(openssl rand -hex 16)
 
 # Valkey 9 ships with a "heroku" ACL user. Create it (the default user stays
 # enabled via requirepass) and connect as it. Earlier versions have no such
@@ -104,13 +104,13 @@ REDIS_URL="$URL"
 
 set-env REDIS_URL "$REDIS_URL"
 set-env VALKEY_URL "$VALKEY_URL"
-echo "export REDIS_URL=$REDIS_URL" >> $BUILDPACK_DIR/export
-echo "export VALKEY_URL=$VALKEY_URL" >> $BUILDPACK_DIR/export
-printf '%s\n' "$START_CMD" >> $PROFILE_PATH
+echo "export REDIS_URL=$REDIS_URL" >>$BUILDPACK_DIR/export
+echo "export VALKEY_URL=$VALKEY_URL" >>$BUILDPACK_DIR/export
+printf '%s\n' "$START_CMD" >>$PROFILE_PATH
 
 # ensure valkey-server is started during CI runs as the buildpack runner will
 # terminate it between buildpacks and .profile.d is too late
-cat<<EOF > $BUILDPACK_DIR/background
+cat <<EOF >$BUILDPACK_DIR/background
 PATH=$HOME/.indyno/vendor/valkey/bin:$PATH
 export REDIS_URL="$REDIS_URL"
 export VALKEY_URL="$VALKEY_URL"
