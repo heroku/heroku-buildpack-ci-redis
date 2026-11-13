@@ -21,7 +21,7 @@ compiled. Thereafter the compiled version will be cached. Valkey will start
 locally on `redis://127.0.0.1:6379`, available in both the `VALKEY_URL` and
 `REDIS_URL` environment variables.
 
-By default Valkey 8 is used. You can specify a `VALKEY_VERSION` in the `env`
+By default Valkey 9 is used. You can specify a `VALKEY_VERSION` in the `env`
 section of your
 [app.json](https://devcenter.heroku.com/articles/heroku-ci#environment-variables-env-key)
 to select a supported major (`7.2`, `8`, or `9`) or an exact version (e.g.
